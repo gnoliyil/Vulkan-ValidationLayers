@@ -5100,7 +5100,8 @@ void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSet
 }
 
 // Generic function to handle state update for all CmdDraw* and CmdDispatch* type functions
-void ValidationStateTracker::UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE *cb_state, CMD_TYPE cmd_type, VkPipelineBindPoint bind_point) {
+void ValidationStateTracker::UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE *cb_state, CMD_TYPE cmd_type,
+                                                            VkPipelineBindPoint bind_point) {
     UpdateDrawState(cb_state, cmd_type, bind_point);
     cb_state->hasDispatchCmd = true;
 }
