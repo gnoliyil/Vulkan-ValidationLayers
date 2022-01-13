@@ -33,6 +33,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define IS_LITTLE_ENDIAN (*(uint16_t *)"\0\xff" > 0x100)
+
+static uint32_t fetch_four_bytes(const uint8_t *ptr) {
+    // Pointer type conversion is only allowed when the pointer is 4-byte
+    // aligned. Otherwise it will be an undefined behavior.
+    if ((uintptr_t)(ptr) % 4 == 0) {
+        return *(const uint32_t *)(ptr);
+    }
+
+    // Otherwise, we do bytewise data load instead.
+    if (IS_LITTLE_ENDIAN) {
+        return (*ptr) | ((*(ptr + 1) << 8)) | ((*(ptr + 2) << 16)) | ((*(ptr + 3) << 24));
+    }
+    return (*(ptr + 3)) | ((*(ptr + 2) << 8)) | ((*(ptr + 1) << 16)) | ((*(ptr) << 24));
+}
+
 uint32_t murmurhash(const char *key, size_t len, uint32_t seed) {
     uint32_t c1 = 0xcc9e2d51;
     uint32_t c2 = 0x1b873593;
@@ -43,20 +59,20 @@ uint32_t murmurhash(const char *key, size_t len, uint32_t seed) {
     uint32_t h = 0;
     uint32_t k = 0;
     uint8_t *d = (uint8_t *)key;  // 32 bit extract from `key'
-    const uint32_t *chunks = NULL;
+    const uint8_t *chunks = NULL;
     const uint8_t *tail = NULL;  // tail - last 8 bytes
     int i = 0;
     int l = (int)len / 4;  // chunk length
 
     h = seed;
 
-    chunks = (const uint32_t *)(d + l * 4);  // body
+    chunks = (const uint8_t *)(d + l * 4);   // body
     tail = (const uint8_t *)(d + l * 4);     // last 8 byte chunk of `key'
 
     // for each 4 byte chunk of `key'
     for (i = -l; i != 0; ++i) {
         // next 4 byte chunk of `key'
-        k = chunks[i];
+        k = fetch_four_bytes(chunks + i * 4);
 
         // encode next 4 byte chunk of `key'
         k *= c1;
